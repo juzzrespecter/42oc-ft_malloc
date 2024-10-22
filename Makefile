@@ -16,11 +16,11 @@ INC=$(addprefix $(INC_DIR), malloc.h)
 
 # ~~                
 
-NAME=libft_malloc.so
-
 ifeq ($(HOSTTYPE),)
 	HOSTTYPE := $(shell uname -m)_$(shell uname -s)
 endif
+
+NAME=libft_malloc_${HOSTTYPE}.so
 
 all: $(NAME)
 
@@ -29,3 +29,11 @@ $(NAME):
 
 test: src/test.c
 	$(CC) $(FLAGS) src/test.c -o test
+
+clean:
+	${RM} ${OBJ_DIR}
+
+fclean: clean
+	${RM} ${NAME}
+
+re: fclean all

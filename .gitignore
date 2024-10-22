@@ -1,0 +1,9 @@
+# deps
+*.a
+obj
+
+# local utils
+notas.md
+
+# ide
+.idea
