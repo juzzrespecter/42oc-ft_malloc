@@ -2,5 +2,6 @@
 
 void    free(void *ptr)
 {
-    
+    if (!ptr)
+        return ;
 }

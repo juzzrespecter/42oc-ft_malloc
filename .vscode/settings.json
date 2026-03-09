@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "malloc.h": "c",
+        "resource.h": "c",
+        "regex.h": "c"
+    }
+}
