@@ -1,4 +1,4 @@
-#include "malloc.h"
+#include "../inc/malloc.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -6,21 +6,33 @@
 #include <regex.h>
 #include <sys/resource.h>
 
-static void capture_mapped_segment_bounds(char* segment, void* ptr) {
+# define RED "\033[31m"
+# define END "\033[0m"
+
+static int capture_mapped_segment_bounds(char* segment, void* ptr) {
     regex_t re;
+    regmatch_t pmatch[3];
     int re_comp = regcomp(&re, "^([a-z0-9]+)-([a-z0-9]+) ", REG_EXTENDED);
     char buffer[100];
 
     if (re_comp) {
-        fprintf(stderr, "Could not compile\n");
-        return ;
+        fprintf(stderr, "regcomp: Could not compile\n");
+        return 0;
     }
-    re_comp = regexec(&re, segment, 0, NULL, 0);
+    if (REG_NOMATCH == re_comp) {
+        return 0;
+    }
+    re_comp = regexec(&re, segment, 3, pmatch, 0);
+    regfree(&re);
     if (!re_comp) {
-        printf("Match\n");
-    }
-    if (re_comp == REG_NOMATCH) {
-        printf("No match\n");
+        unsigned long bound_lo = strtol(segment + pmatch[1].rm_so, NULL, 16);
+        unsigned long bound_hi = strtol(segment + pmatch[2].rm_so, NULL, 16);
+
+        if ((unsigned long)ptr >= bound_lo && (unsigned long)ptr <= bound_hi) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 }
 
@@ -30,10 +42,8 @@ static void get_mapped_segment(void *ptr_to_track) {
     char output[200];
     FILE *popen_stream;
 
-
-
 //    sprintf(cmd_buffer, "cat /proc/%d/maps | grep %p", pid, ptr_to_track);
-    sprintf(cmd_buffer, "cat /proc/%d/maps", pid);
+    sprintf(cmd_buffer, "cat /proc/%d/maps\n", pid);
     printf(cmd_buffer);
     popen_stream = popen(cmd_buffer, "r");
     if (!popen_stream) {
@@ -41,8 +51,11 @@ static void get_mapped_segment(void *ptr_to_track) {
         return ;
     }
     while (fgets(output, sizeof output, popen_stream)) {
-        capture_mapped_segment_bounds(output, ptr_to_track);
-        printf("%s", output);
+        if (capture_mapped_segment_bounds(output, ptr_to_track)) {
+            printf(RED "%s" END, output);
+        } else {
+            printf("%s", output);
+        }
     }
     fclose(popen_stream);
 }   
@@ -69,15 +82,16 @@ int main(int argc, char **argv) {
     printf("rlimit call: curr (%ld), max (%ld)\n", rlim.rlim_cur, rlim.rlim_max);
     getchar();
 
-
     do_malloc(10);
     do_malloc(20);
     do_malloc(30);
+    getchar();
 
     do_malloc(100000);
     do_malloc(200000);
     do_malloc(2000000000);
     do_malloc(2000000000);
+    getchar();
 
     exit(0);
 }

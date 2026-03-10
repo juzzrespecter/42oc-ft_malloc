@@ -7,3 +7,10 @@ notas.md
 
 # ide
 .idea
+
+# testing
+poc_*
+test
+
+# bin
+*.so
